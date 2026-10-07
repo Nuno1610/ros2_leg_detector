@@ -12,15 +12,24 @@
 
 
   <depend>rclcpp</depend>
+  <depend>rclpy</depend>
   <depend>leg_detector_msgs</depend>
   <depend>sensor_msgs</depend>
-  <depend>OpenCV 3.4.12</depend>
   <depend>tf2</depend>
   <depend>tf2_geometry_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>visualization_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>message_filters</depend>
+  <depend>geometry_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>python3-numpy</depend>
+  <depend>python3-scipy</depend>
+  <depend>python3-pykalman</depend>
+  <exec_depend>gazebo_ros</exec_depend>
+  <exec_depend>gazebo_plugins</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>nav2_msgs</exec_depend>
   
 
 

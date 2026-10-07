@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-// ROS related Headers
+// Cabeceras relacionadas con ROS.
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/buffer.h>
@@ -44,7 +44,7 @@
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <memory>
 
-// OpenCV related Headers
+// Cabeceras relacionadas con OpenCV.
 #include <opencv2/core/core.hpp>
 #include <opencv2/ml/ml.hpp>
 #include <opencv2/ml.hpp>
@@ -53,11 +53,11 @@
 // #include <opencv2/imgproc.hpp>
 // #include <opencv2/highgui.hpp>
 
-// Local Headers
+// Cabeceras locales.
 #include "leg_detector/cluster_features.h"
 #include "leg_detector/laser_processor.h"
 
-// Custom Messages related Headers
+// Cabeceras relacionadas con mensajes personalizados.
 #include "leg_detector_msgs/msg/leg.hpp"
 #include "leg_detector_msgs/msg/leg_array.hpp"
 
@@ -69,7 +69,7 @@ public:
     DetectLegClusters() : Node("detect_leg_clusters")
     {
 
-        // Get ROS parameters
+        // Obtiene los parámetros de ROS.
         std::string forest_file;
         std::string scan_topic;
         num_prev_markers_published_ = 0;
@@ -86,19 +86,19 @@ public:
         this->declare_parameter("use_scan_header_stamp_for_tfs", rclcpp::ParameterValue(false));
         this->declare_parameter("max_detected_clusters", rclcpp::ParameterValue(-1.0));
 
-        // Retrieve and define parameters
+        // Recupera y asigna los parámetros.
         scan_topic = this->get_parameter("scan_topic").as_string();
         fixed_frame_ = this->get_parameter("fixed_frame").as_string();
         forest_file = this->get_parameter("forest_file").as_string();
         detection_threshold_ = this->get_parameter("detection_threshold").as_double();
         cluster_dist_euclid_ = this->get_parameter("cluster_dist_euclid").as_double();
-        min_points_per_cluster_ = this->get_parameter("min_points_per_cluster").as_double(); // Note: Changed from int to double
+        min_points_per_cluster_ = this->get_parameter("min_points_per_cluster").as_double(); // Nota: se ha cambiado de int a double.
         max_detect_distance_ = this->get_parameter("max_detect_distance").as_double();
         marker_display_lifetime_ = this->get_parameter("marker_display_lifetime").as_double();
         use_scan_header_stamp_for_tfs_ = this->get_parameter("use_scan_header_stamp_for_tfs").as_bool();
         max_detected_clusters_ = this->get_parameter("max_detected_clusters").as_double();
 
-        // Print the ROS parameters
+        // Muestra los parámetros de ROS.
         RCLCPP_INFO(this->get_logger(), "forest_file: %s", forest_file.c_str());
         RCLCPP_INFO(this->get_logger(), "scan_topic: %s", scan_topic.c_str());
         RCLCPP_INFO(this->get_logger(), "fixed_frame: %s", fixed_frame_.c_str());
@@ -110,17 +110,17 @@ public:
         RCLCPP_INFO(this->get_logger(), "use_scan_header_stamp_for_tfs: %d", use_scan_header_stamp_for_tfs_);
         RCLCPP_INFO(this->get_logger(), "max_detected_clusters: %d", max_detected_clusters_);
 
-        // Load Random forest
+        // Carga el bosque aleatorio.
         forest = cv::ml::StatModel::load<cv::ml::RTrees>(forest_file);
         feat_count_ = forest->getVarCount();
 
         latest_scan_header_stamp_with_tf_available_ = this->now();
 
-        /**Define the publishers and subscribers
-         * This node will publish 2 topics
-         * 1. visualization_marker  : message type - <visualization_msgs::Marker>
-         * 2. detected_leg_clusters : message type - <leg_detector_msgs::msg::LegArray>
-         * This node will subscribe to 1 topic
+        /** Define los publicadores y suscriptores.
+         * Este nodo publicará en dos tópicos:
+         * 1. visualization_marker  : tipo de mensaje - <visualization_msgs::Marker>
+         * 2. detected_leg_clusters : tipo de mensaje - <leg_detector_msgs::msg::LegArray>
+         * Este nodo se suscribirá a un tópico:
          * 1. scan_topic
          ***/
         markers_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("visualization_marker", 20);
@@ -160,17 +160,17 @@ private:
     double marker_display_lifetime_;
     int max_detected_clusters_;
 
-    // create the publisher and subscribers
+    // Crea el publicador y los suscriptores.
 
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr markers_pub_;
     rclcpp::Publisher<leg_detector_msgs::msg::LegArray>::SharedPtr detected_leg_clusters_pub_;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scan_sub_;
 
     /**
-     * @brief Clusters the scan according to euclidian distance,
-     *        predicts the confidence that each cluster is a human leg and publishes the results
+    * @brief Agrupa el escaneo según la distancia euclídea,
+    *        predice la probabilidad de que cada clúster sea una pierna humana y publica los resultados.
      *
-     * Called every time a laser scan is published.
+    * Se ejecuta cada vez que se publica un escaneo láser.
      */
     void laserCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan)
     {
@@ -178,7 +178,7 @@ private:
         processor.splitConnected(cluster_dist_euclid_);
         processor.removeLessThan(min_points_per_cluster_);
 
-        // OpenCV matrix needed to use the OpenCV random forest classifier
+        // Matriz de OpenCV necesaria para utilizar el clasificador de bosque aleatorio.
         // CvMat *tmp_mat = cvCreateMat(1, feat_count_, CV_32FC1);
         cv::Mat tmp_mat(1, feat_count_, CV_32FC1);
 
@@ -186,12 +186,12 @@ private:
         detected_leg_clusters.header.frame_id = scan->header.frame_id;
         detected_leg_clusters.header.stamp = scan->header.stamp;
 
-        // Find out the time that should be used for tfs
+        // Determina el instante que debe utilizarse para las transformaciones TF.
         bool transform_available;
         rclcpp::Clock tf_time;
         rclcpp::Time tf_time1;
 
-        // Use time from scan header
+        // Utiliza el instante de la cabecera del escaneo.
         if (use_scan_header_stamp_for_tfs_)
         {
             tf_time1 = scan->header.stamp;
@@ -210,13 +210,13 @@ private:
         else
         {
 
-            // Otherwise just use the latest tf available
+            // En caso contrario, utiliza la última transformación TF disponible.
 
             tf_time.now();
             transform_available = buffer_->canTransform(fixed_frame_, scan->header.frame_id, tf_time1);
         }
 
-        // Store all processes legs in a set ordered according to their relative distance to the laser scanner
+        // Guarda todas las piernas procesadas en un conjunto ordenado según su distancia relativa al escáner láser.
         std::set<leg_detector_msgs::msg::Leg, CompareLegs> leg_set;
 
         if (!transform_available)
@@ -226,10 +226,10 @@ private:
         else
         {
 
-            // Iterate through all clusters
+            // Recorre todos los clústeres.
             for (std::list<laser_processor::SampleSet *>::iterator cluster = processor.getClusters().begin(); cluster != processor.getClusters().end(); cluster++)
             {
-                // Get position of cluster in laser frame
+                // Obtiene la posición del clúster en el marco del láser.
                 std::string frame_id = scan->header.frame_id;
                 geometry_msgs::msg::PointStamped position;
                 geometry_msgs::msg::PointStamped position1;
@@ -238,11 +238,11 @@ private:
                 position.point = (*cluster)->getPosition();
                 float rel_dist = pow(position.point.x * position.point.x + position.point.y * position.point.y, 1. / 2.);
 
-                // Only consider clusters within max_distance
+                // Solo considera clústeres situados dentro de max_detect_distance_.
                 if (rel_dist < max_detect_distance_)
                 {
 
-                    // Classify cluster using random forest classifier
+                    // Clasifica el clúster mediante el clasificador de bosque aleatorio.
                     std::vector<float> f = cf_.calcClusterFeatures(*cluster, *scan);
                     for (int k = 0; k < feat_count_; k++)
                     {
@@ -251,10 +251,11 @@ private:
                     }
 
 #if (CV_VERSION_MAJOR <= 3 || CV_VERSION_MINOR <= 2)
-                    // Output of forest->predict is [-1.0, 1.0] so we scale to reach [0.0, 1.0]
+                    // La salida de forest->predict está en [-1.0, 1.0], por lo que se escala a [0.0, 1.0].
                     float probability_of_leg = 0.5 * (1.0 + forest->predict(cv::cvarrToMat(tmp_mat)));
 #else
-                    // The forest->predict funciton has been removed in the latest versions of OpenCV so we'll do the calculation explicitly.
+                    // La función forest->predict se ha eliminado en las versiones recientes de OpenCV,
+                    // así que el cálculo se realiza explícitamente.
                     // RCLCPP_INFO(this->get_logger(), "Checkout 6");
                     cv::Mat result;
                     // forest->getVotes(cv::cvarrToMat(tmp_mat), result, 0);
@@ -264,11 +265,11 @@ private:
                     float probability_of_leg = positive_votes / static_cast<double>(positive_votes + negative_votes);
 #endif
 
-                    // Consider only clusters that have a confidence greater than detection_threshold_
+                    // Considera solo los clústeres cuya confianza supera detection_threshold_.
                     if (probability_of_leg > detection_threshold_)
                     {
-                        // Transform cluster position to fixed frame
-                        // This should always be succesful because we've checked earlier if a tf was available
+                        // Transforma la posición del clúster al marco fijo.
+                        // Debe tener éxito porque antes se comprobó que había una transformación TF disponible.
                         bool transform_successful_2;
                         try
                         {
@@ -283,7 +284,8 @@ private:
 
                         if (transform_successful_2)
                         {
-                            // Add detected cluster to set of detected leg clusters, along with its relative position to the laser scanner
+                            // Añade el clúster detectado al conjunto de clústeres de piernas,
+                            // junto con su posición relativa al escáner láser.
                             leg_detector_msgs::msg::Leg new_leg;
                             new_leg.position.x = position.point.x;
                             new_leg.position.y = position.point.y;
@@ -295,15 +297,15 @@ private:
             }
         }
 
-        // Publish detected legs to /detected_leg_clusters and to rviz
-        // They are ordered from closest to the laser scanner to furthest
+        // Publica las piernas detectadas en /detected_leg_clusters y en RViz.
+        // Se ordenan de la más cercana a la más lejana respecto al escáner láser.
         int clusters_published_counter = 0;
         int id_num = 1;
 
         for (std::set<leg_detector_msgs::msg::Leg>::iterator it = leg_set.begin(); it != leg_set.end(); ++it)
         {
 
-            // Publish to /detected_leg_clusters topic
+            // Publica en el tópico /detected_leg_clusters.
             leg_detector_msgs::msg::Leg leg = *it;
             detected_leg_clusters.legs.push_back(leg);
             clusters_published_counter++;
@@ -325,14 +327,14 @@ private:
             m.color.b = leg.confidence;
             markers_pub_->publish(m);
 
-            // Comparison using '==' and not '>=' is important, as it allows <max_detected_clusters_>=-1
-            // to publish infinite markers
+            // Es importante utilizar «==» en lugar de «>=», ya que permite que
+            // <max_detected_clusters_>=-1 publique un número ilimitado de marcadores.
             if (clusters_published_counter == max_detected_clusters_)
                 break;
         }
         // debug_file.close();
 
-        // Clear remaining markers in Rviz
+        // Elimina los marcadores restantes de RViz.
         for (int id_num_diff = num_prev_markers_published_ - id_num; id_num_diff > 0; id_num_diff--)
         {
             visualization_msgs::msg::Marker m;
@@ -344,18 +346,18 @@ private:
             m.action = m.DELETE;
             markers_pub_->publish(m);
         }
-        num_prev_markers_published_ = id_num; // For the next callback
+        num_prev_markers_published_ = id_num; // Para el siguiente callback.
         detected_leg_clusters_pub_->publish(detected_leg_clusters);
         // cvReleaseMat(&tmp_mat);
     }
 
     /**
-     * @brief Comparison class to order Legs according to their relative distance to the laser scanner
+    * @brief Clase de comparación para ordenar las piernas según su distancia relativa al escáner láser.
      **/
     class CompareLegs
     {
     public:
-        bool operator()(const leg_detector_msgs::msg::Leg &a, const leg_detector_msgs::msg::Leg &b) const // Add const here
+        bool operator()(const leg_detector_msgs::msg::Leg &a, const leg_detector_msgs::msg::Leg &b) const // El const es necesario aquí.
         {
             float rel_dist_a = pow(a.position.x * a.position.x + a.position.y * a.position.y, 1. / 2.);
             float rel_dist_b = pow(b.position.x * b.position.x + b.position.y * b.position.y, 1. / 2.);

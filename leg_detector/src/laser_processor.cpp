@@ -125,8 +125,8 @@ namespace laser_processor
 
     void ScanProcessor::splitConnected(float thresh){
 
-        // Holds our temporary list of split clusters 
-        // because we will be modifying our existing list in the mean time
+        // Contiene temporalmente los clústeres divididos,
+        // ya que la lista existente se modificará durante el proceso.
         std::list<SampleSet*> tmp_clusters;
 
         std::list<SampleSet*>::iterator c_iter = clusters_.begin();
@@ -137,9 +137,9 @@ namespace laser_processor
             while ((*c_iter)->size() > 0)
             {
 
-                // Iterate over laser scan samples in clusters_
-                // and collect those which are within a euclidian distance of <thresh>
-                // and store new clusters in tmp_clusters
+                // Recorre las muestras del escaneo láser en clusters_,
+                // recopila las que están a una distancia euclídea menor que <thresh>
+                // y guarda los nuevos clústeres en tmp_clusters.
                 SampleSet::iterator s_first = (*c_iter)->begin();
                 std::list<Sample*> sample_queue;
                 sample_queue.push_back(*s_first);
@@ -165,23 +165,23 @@ namespace laser_processor
                     }
                     s_q++;
                 }
-                // Move all the samples into the new cluster
+                // Mueve todas las muestras al nuevo clúster.
                 SampleSet* c = new SampleSet;
                 for (s_q = sample_queue.begin(); s_q != sample_queue.end(); s_q++)
                     c->insert(*s_q);
 
-                // Store the temporary clusters
+                // Guarda los clústeres temporales.
                 tmp_clusters.push_back(c);
             }
 
-            //Now that c_iter is empty, we can delete
+            // Ahora que c_iter está vacío, se puede eliminar.
             delete (*c_iter);
 
-            //And remove from the map
+            // Y lo elimina de la lista de clústeres.
             clusters_.erase(c_iter++);
         }
 
-        // Insert our temporary clusters list back into the de facto list
+        // Inserta de nuevo la lista de clústeres temporales en la lista principal.
         clusters_.insert(clusters_.begin(), tmp_clusters.begin(), tmp_clusters.end());
     }
 } // namespace laser_processor 

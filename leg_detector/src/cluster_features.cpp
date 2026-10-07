@@ -34,15 +34,16 @@
 
 #include "leg_detector/cluster_features.h"
 
-#include <opencv/cxcore.h>
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
+#include <opencv2/core/core_c.h>
+#include <opencv2/opencv.hpp>
 
 std::vector<float> ClusterFeatures::calcClusterFeatures(const laser_processor::SampleSet *cluster, const sensor_msgs::msg::LaserScan &scan)
 {
-    // Number of points
+    // Número de puntos.
     int num_points = cluster->size();
 
-    // Compute mean and median points for future use
+    // Calcula la media y la mediana de los puntos para utilizarlas más adelante.
     float x_mean = 0.0;
     float y_mean = 0.0;
     std::vector<float> x_median_set;
@@ -61,10 +62,10 @@ std::vector<float> ClusterFeatures::calcClusterFeatures(const laser_processor::S
     float x_median = 0.5 * (*(x_median_set.begin() + (num_points - 1) / 2) + *(x_median_set.begin() + num_points / 2));
     float y_median = 0.5 * (*(y_median_set.begin() + (num_points - 1) / 2) + *(y_median_set.begin() + num_points / 2));
 
-    // Computer distance to laser scanner
+    // Calcula la distancia al escáner láser.
     float distance = sqrt(x_median * x_median + y_median * y_median);
 
-    // Compute std and avg diff from median
+    // Calcula la desviación estándar y la diferencia media respecto a la mediana.
     double sum_std_diff = 0.0;
     double sum_med_diff = 0.0;
 
@@ -77,12 +78,12 @@ std::vector<float> ClusterFeatures::calcClusterFeatures(const laser_processor::S
     float std = sqrt(1.0 / (num_points - 1.0) * sum_std_diff);
     float avg_median_dev = sum_med_diff / num_points;
 
-    // Get first and last points in cluster
+    // Obtiene el primer y el último punto del clúster.
     laser_processor::SampleSet::iterator first = cluster->begin();
     laser_processor::SampleSet::iterator last = cluster->end();
     --last;
 
-    // Compute Jump distance and Occluded right and Occluded left
+    // Calcula la distancia de salto y la oclusión derecha e izquierda.
     int prev_ind = (*first)->index - 1;
     int next_ind = (*last)->index + 1;
 
@@ -115,10 +116,10 @@ std::vector<float> ClusterFeatures::calcClusterFeatures(const laser_processor::S
         }
     }
 
-    // Compute width - euclidian distance between first + last points
+    // Calcula la anchura, es decir, la distancia euclídea entre el primer y el último punto.
     float width = sqrt(pow((*first)->x - (*last)->x, 2) + pow((*first)->y - (*last)->y, 2));
 
-    // Compute Linearity
+    // Calcula la linealidad.
     CvMat *points = cvCreateMat(num_points, 2, CV_64FC1);
 
     {
@@ -156,7 +157,7 @@ std::vector<float> ClusterFeatures::calcClusterFeatures(const laser_processor::S
     // cvReleaseMat(&rot_points);
     rot_points = 0;
 
-    // Compute Circularity
+    // Calcula la circularidad.
     CvMat *A = cvCreateMat(num_points, 3, CV_64FC1);
     CvMat *B = cvCreateMat(num_points, 1, CV_64FC1);
     {
@@ -195,20 +196,20 @@ std::vector<float> ClusterFeatures::calcClusterFeatures(const laser_processor::S
         circularity += pow(rc - sqrt(pow(xc - (*i)->x, 2) + pow(yc - (*i)->y, 2)), 2);
     }
 
-    // Radius
+    // Radio.
     float radius = rc;
 
-    // Curvature:
+    // Curvatura.
     float mean_curvature = 0.0;
 
-    // Boundary length:
+    // Longitud del contorno.
     float boundary_length = 0.0;
     float last_boundary_seg = 0.0;
 
     float boundary_regularity = 0.0;
     double sum_boundary_reg_sq = 0.0;
 
-    // Mean angular difference
+    // Diferencia angular media.
     laser_processor::SampleSet::iterator left = cluster->begin();
     left++;
     left++;
@@ -264,7 +265,7 @@ std::vector<float> ClusterFeatures::calcClusterFeatures(const laser_processor::S
 
     boundary_regularity = sqrt((sum_boundary_reg_sq - pow(boundary_length, 2) / num_points) / (num_points - 1));
 
-    // Mean angular difference
+    // Diferencia angular media.
     first = cluster->begin();
     mid = cluster->begin();
     mid++;
@@ -297,14 +298,14 @@ std::vector<float> ClusterFeatures::calcClusterFeatures(const laser_processor::S
         mid++;
     }
 
-    // incribed angle variance?
+    // Varianza angular inscrita. El origen de esta característica no está claro.
     float iav = sum_iav / num_points;
     float std_iav = sqrt((sum_iav_sq - pow(sum_iav, 2) / num_points) / (num_points - 1));
 
-    // Add features
+    // Añade las características.
     std::vector<float> features;
 
-    // features from "Using Boosted Features for the Detection of People in 2D Range Data"
+    // Características del artículo «Using Boosted Features for the Detection of People in 2D Range Data».
     features.push_back(num_points);
     features.push_back(std);
     features.push_back(avg_median_dev);
@@ -316,13 +317,13 @@ std::vector<float> ClusterFeatures::calcClusterFeatures(const laser_processor::S
     features.push_back(boundary_regularity);
     features.push_back(mean_curvature);
     features.push_back(ang_diff);
-    // feature from paper which cannot be calculated here: mean speed
+    // Característica del artículo que no puede calcularse aquí: velocidad media.
 
-    // Inscribed angular variance, I believe. Not sure what paper this is from
+    // Probablemente se trata de la varianza angular inscrita. No se ha identificado el artículo de origen.
     features.push_back(iav);
     features.push_back(std_iav);
 
-    // New features from Angus
+    // Nuevas características propuestas por Angus.
     features.push_back(distance);
     features.push_back(distance / num_points);
     features.push_back(occluded_right);

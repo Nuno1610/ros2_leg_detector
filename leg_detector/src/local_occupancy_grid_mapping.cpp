@@ -1,4 +1,4 @@
-// Include ROS related Headers
+// Incluye las cabeceras relacionadas con ROS.
 
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/transform_listener.h>
@@ -7,7 +7,7 @@
 #include <tf2/utils.h>
 #include <tf2_ros/buffer.h>
 
-// Include ROS messages
+// Incluye los mensajes de ROS.
 
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
@@ -17,16 +17,16 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 
-// Include Custom Messages
+// Incluye los mensajes personalizados.
 
 #include <leg_detector_msgs/msg/leg.hpp>
 #include <leg_detector_msgs/msg/leg_array.hpp>
 
-// Include Local Headers
+// Incluye las cabeceras locales.
 
 #include <leg_detector/laser_processor.h>
 
-// local constants definition
+// Definición de constantes locales.
 
 #define ALPHA 0.2
 #define BETA 0.1
@@ -39,9 +39,10 @@
 using namespace message_filters;
 
 /**
- * @basic A simple 'local' occupancy grid map that maps everything except tracked humans
+ * @basic Mapa de ocupación «local» sencillo que representa todo excepto las personas seguidas.
  *
- * Maps a small area around the robot. The occupied areas on the map are all non-human obstacles.
+ * Representa una zona pequeña alrededor del robot. Las zonas ocupadas del mapa
+ * corresponden a obstáculos que no son personas.
  */
 class OccupancyGridMapping : public rclcpp::Node
 {
@@ -83,8 +84,8 @@ public:
         cluster_dist_euclid_ = this->get_parameter("cluster_dist_euclid").as_double();
         min_points_per_cluster_ = this->get_parameter("min_points_per_cluster").as_int();
 
-        // Initialize map
-        // All probabilities are held in log-space
+        // Inicializa el mapa.
+        // Todas las probabilidades se almacenan en el espacio logarítmico.
         l0_ = logit(UNKNOWN);
         l_min_ = logit(MIN_PROB);
         l_max_ = logit(MAX_PROB);
@@ -112,7 +113,7 @@ public:
 
         scan_sub_.subscribe(this, "/scan", rclcpp::QoS(rclcpp::SensorDataQoS()).get_rmw_qos_profile());
 
-        // To coordinate callback for both laser scan message and a non_leg_clusters message
+        // Coordina el callback de los mensajes del escaneo láser y de non_leg_clusters.
         sync.registerCallback(std::bind(&OccupancyGridMapping::laserAndLegCallback, this, std::placeholders::_1, std::placeholders::_2));
 
         map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(local_map_topic, 10);
@@ -160,14 +161,14 @@ private:
     std::shared_ptr<tf2_ros::Buffer> buffer_;
 
     /**
-     * @brief Coordinated callback for both laser scan message and a non_leg_clusters message
+    * @brief Callback coordinado para los mensajes del escaneo láser y de non_leg_clusters.
      *
-     * Called whenever both topics have been recently published to
+    * Se ejecuta cuando ambos tópicos han publicado mensajes recientemente.
      **/
     void laserAndLegCallback(const sensor_msgs::msg::LaserScan::ConstSharedPtr &scan_msg, const leg_detector_msgs::msg::LegArray::ConstSharedPtr &non_leg_clusters)
     {
 
-        // Find out the time that should be used for tfs
+        // Determina el instante que debe utilizarse para las transformaciones TF.
         bool transform_available;
         rclcpp::Time tf_time;
 
@@ -189,7 +190,7 @@ private:
         else
         {
 
-            // Use the latest transform available
+            // Utiliza la última transformación disponible.
             tf_time = rclcpp::Time(0);
             transform_available = buffer_->canTransform(fixed_frame_, scan_msg->header.frame_id, tf_time);
         }
@@ -197,10 +198,10 @@ private:
         if (transform_available)
         {
 
-            // Next step: find scan beams that correspond to humans/tracked legs so
-            // we can count them as freespace in the grid occupancy map
+            // Busca los haces del escaneo que corresponden a personas o piernas seguidas
+            // para contabilizarlos como espacio libre en el mapa de ocupación.
 
-            // Transform tracked legs back into the laser frame
+            // Transforma las piernas seguidas de vuelta al marco del láser.
             std::vector<geometry_msgs::msg::Point> non_legs;
 
             for (long unsigned int i = 0; i < non_leg_clusters->legs.size(); i++)
@@ -231,8 +232,8 @@ private:
                 }
             }
 
-            // Determine which scan samples correspond to humans
-            // so we can mark those areas as unoccupied in the map
+            // Determina qué muestras del escaneo corresponden a personas
+            // para marcar esas zonas como desocupadas en el mapa.
             std::vector<bool> is_sample_human;
             is_sample_human.resize(scan_msg->ranges.size(), false);
             sensor_msgs::msg::LaserScan scan = *scan_msg;
@@ -244,8 +245,8 @@ private:
                 bool is_cluster_human = true;
                 geometry_msgs::msg::Point c_pos = (*c_iter)->getPosition();
 
-                // Check every point in the <non_legs> message to see
-                // if the scan cluster is within an epsilon distance of the cluster
+                // Comprueba cada punto del mensaje <non_legs> para determinar
+                // si el clúster del escaneo está a una distancia epsilon del punto.
                 for (std::vector<geometry_msgs::msg::Point>::iterator non_leg = non_legs.begin();
                      non_leg != non_legs.end(); ++non_leg)
                 {
@@ -259,7 +260,7 @@ private:
                     }
                 }
 
-                // Set all scan samples in the cluster to <is_cluster_human>
+                // Asigna <is_cluster_human> a todas las muestras del escaneo que pertenecen al clúster.
                 for (laser_processor::SampleSet::iterator s_iter = (*c_iter)->begin();
                      s_iter != (*c_iter)->end();
                      ++s_iter)
@@ -269,9 +270,9 @@ private:
                 }
             }
 
-            // Next step: Update the local grid occupancy map
+            // Actualiza el mapa de ocupación local.
 
-            // Get the pose of the laser in the fixed frame
+            // Obtiene la pose del láser en el marco fijo.
             bool transform_succesful;
             geometry_msgs::msg::PoseStamped init_pose;
             geometry_msgs::msg::PoseStamped laser_pose_fixed_frame;
@@ -294,12 +295,12 @@ private:
             if (transform_succesful)
             {
 
-                // Get the position of the laser
+                // Obtiene la posición del láser.
                 double laser_x = laser_pose_fixed_frame.pose.position.x;
                 double laser_y = laser_pose_fixed_frame.pose.position.y;
                 double laser_yaw = tf2::getYaw(laser_pose_fixed_frame.pose.orientation);
 
-                // Get position of the local occupancy grid relative to the fixed frame
+                // Obtiene la posición de la cuadrícula de ocupación local respecto al marco fijo.
                 if (grid_centre_pos_found_ == false)
                 {
                     grid_centre_pos_found_ = true;
@@ -307,15 +308,15 @@ private:
                     grid_centre_pos_y_ = laser_y;
                 }
 
-                // Check if we need to shift the local grid to be more centred on the laser
+                // Comprueba si hay que desplazar la cuadrícula local para centrarla mejor en el láser.
                 if (sqrt(pow(grid_centre_pos_x_ - laser_x, 2) + pow(grid_centre_pos_y_ - laser_y, 2)) > shift_threshold_)
                 {
 
-                    // Shifting the local grid
+                    // Desplaza la cuadrícula local.
                     int translate_x = -(int)round((grid_centre_pos_x_ - laser_x) / resolution_);
                     int translate_y = -(int)round((grid_centre_pos_y_ - laser_y) / resolution_);
 
-                    // Could translate in place to optimize later if needed
+                    // Si fuera necesario, podría traducirse directamente para optimizarlo más adelante.
                     std::vector<double> l_translated;
                     l_translated.resize(width_ * width_);
                     for (int i = 0; i < width_; i++)
@@ -342,14 +343,14 @@ private:
                     grid_centre_pos_y_ = laser_y;
                 }
 
-                // Update the local occupancy grid with the new scan
+                // Actualiza la cuadrícula de ocupación local con el nuevo escaneo.
                 for (int i = 0; i < width_; i++)
                 {
                     for (int j = 0; j < width_; j++)
                     {
                         double m_update;
 
-                        // Find dist and angle of current cell to laser position
+                        // Calcula la distancia y el ángulo de la celda actual respecto al láser.
                         double dist = sqrt(pow(i * resolution_ + grid_centre_pos_x_ - (width_ / 2.0) * resolution_ - laser_x, 2.0) + pow(j * resolution_ + grid_centre_pos_y_ - (width_ / 2.0) * resolution_ - laser_y, 2.0));
                         double angle = betweenPIandNegPI(atan2(j * resolution_ + grid_centre_pos_y_ - (width_ / 2.0) * resolution_ - laser_y, i * resolution_ + grid_centre_pos_x_ - (width_ / 2.0) * resolution_ - laser_x) - laser_yaw);
                         bool is_human;
@@ -357,42 +358,43 @@ private:
                         if (angle > scan.angle_min - scan.angle_increment / 2.0 and angle < scan.angle_max + scan.angle_increment / 2.0)
                         {
 
-                            // Find applicable laser measurement
+                            // Busca la medición láser aplicable.
                             double closest_beam_angle = round(angle / scan.angle_increment) * scan.angle_increment;
                             int idx_without_bounds_check = round(angle / scan.angle_increment) + scan.ranges.size() / 2;
                             int closest_beam_idx = std::max(0, std::min(static_cast<int>(scan.ranges.size() - 1), idx_without_bounds_check));
                             is_human = is_sample_human[closest_beam_idx];
 
-                            // Processing the range value of the closest_beam to determine if it's a valid measurement or not.
-                            // Sometimes it returns infs and NaNs that have to be dealt with
+                            // Procesa el valor de rango del haz más cercano para determinar si es válido.
+                            // A veces devuelve infinitos o NaN que deben gestionarse.
                             bool valid_measurement;
                             if (scan.range_min <= scan.ranges[closest_beam_idx] && scan.ranges[closest_beam_idx] <= scan.range_max)
                             {
 
-                                // This is a valid measurement.
+                                // Es una medición válida.
                                 valid_measurement = true;
                             }
                             else if (!std::isfinite(scan.ranges[closest_beam_idx]) && scan.ranges[closest_beam_idx] < 0)
                             {
 
-                                // Object too close to measure.
+                                // El objeto está demasiado cerca para medirlo.
                                 valid_measurement = false;
                             }
                             else if (!std::isfinite(scan.ranges[closest_beam_idx]) && scan.ranges[closest_beam_idx] > 0)
                             {
 
-                                // No objects detected in range.
+                                // No se han detectado objetos dentro del rango.
                                 valid_measurement = true;
                             }
                             else if (std::isnan(scan.ranges[closest_beam_idx]))
                             {
 
-                                // This is an erroneous, invalid, or missing measurement.
+                                // Es una medición errónea, no válida o ausente.
                                 valid_measurement = false;
                             }
                             else
                             {
-                                // The sensor reported these measurements as valid, but they are discarded per the limits defined by minimum_range and maximum_range.
+                                // El sensor informó de una medición válida, pero se descarta
+                                // por los límites definidos por minimum_range y maximum_range.
                                 valid_measurement = false;
                             }
 
@@ -415,7 +417,8 @@ private:
                             }
                             else
                             {
-                                // Assume cells corresponding to erroneous measurements are either in freespace or unknown
+                                // Supone que las celdas asociadas a mediciones erróneas están
+                                // en espacio libre o en estado desconocido.
                                 if (invalid_measurements_are_free_space_)
                                     m_update = FREE_SPACE;
                                 else
@@ -427,7 +430,7 @@ private:
                             m_update = UNKNOWN;
                         }
 
-                        // update l_ using m_update
+                        // Actualiza l_ utilizando m_update.
                         l_[i + width_ * j] = (l_[i + width_ * j] + logit(m_update) - l0_);
                         if (l_[i + width_ * j] < l_min_)
                             l_[i + width_ * j] = l_min_;
@@ -435,7 +438,7 @@ private:
                             l_[i + width_ * j] = l_max_;
                     }
                 }
-                // Create and fill out an OccupancyGrid message
+                // Crea y completa un mensaje OccupancyGrid.
                 nav_msgs::msg::OccupancyGrid m_msg;
                 m_msg.header.stamp = scan_msg->header.stamp; // ros::Time::now();
                 m_msg.header.frame_id = fixed_frame_;
@@ -447,16 +450,16 @@ private:
                 for (int i = 0; i < width_; i++)
                     for (int j = 0; j < width_; j++)
                         m_msg.data.push_back((int)(inverseLogit(l_[width_ * i + j]) * 100));
-                // Publish!
+                // Publica el mapa.
                 map_pub_->publish(m_msg);
             }
         }
     }
 
     /**
-     * @basic The logit function, i.e., the inverse of the logstic function
+    * @basic Función logit, es decir, la inversa de la función logística.
      * @param p
-     * @return The logit of p
+    * @return El logit de p.
      **/
     double logit(double p)
     {
@@ -464,9 +467,9 @@ private:
     }
 
     /**
-     * @basic The inverse of the logit function, i.e., the logsitic function
+    * @basic Inversa de la función logit, es decir, la función logística.
      * @param p
-     * @return The inverse logit of p
+    * @return El logit inverso de p.
      **/
     double inverseLogit(double p)
     {
@@ -474,9 +477,9 @@ private:
     }
 
     /**
-     * @basic Returns the equivilant of a passed-in angle in the -PI to PI range
-     * @param angle_in The input angle
-     * @return The angle in the range -PI to PI
+    * @basic Devuelve el equivalente del ángulo indicado en el rango de -PI a PI.
+    * @param angle_in Ángulo de entrada.
+    * @return Ángulo en el rango de -PI a PI.
      **/
     double betweenPIandNegPI(double angle_in)
     {

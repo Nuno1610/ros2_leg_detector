@@ -16,10 +16,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-set (OpenCV_DIR /usr/local/include)
-include_directories(include ${OpenCV_INCLUDE_DIR})
-
-
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
@@ -36,6 +32,8 @@ find_package(nav_msgs REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+
+include_directories(include ${OpenCV_INCLUDE_DIRS})
 
 
 # add the executables
@@ -69,6 +67,7 @@ install (TARGETS
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY rosbag DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY description worlds DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

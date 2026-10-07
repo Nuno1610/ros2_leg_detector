@@ -7,23 +7,42 @@ import launch
 import os
 
 leg_detector_path = get_package_share_directory('leg_detector')
+ros2_rosbag_path = leg_detector_path + "/rosbag/demos/demo_stationary_ros2"
 rosbag_path = leg_detector_path + "/rosbag/demos/demo_stationary_simple_environment.bag"
 rviz2_config_path = leg_detector_path + "/rosbag/demos/rviz/demo_stationary_simple_environment.rviz"
 forest_file_path = leg_detector_path + "/config/trained_leg_detector_res=0.33.yaml"
 
 def generate_launch_description():
 
+    if os.path.isdir(ros2_rosbag_path):
+        rosbag_command = [
+            'ros2', 'bag', 'play', '--loop', '--disable-keyboard-controls',
+            ros2_rosbag_path,
+        ]
+    else:
+        rosbag_command = ['ros2', 'bag', 'play', '-s', 'rosbag_v2', rosbag_path]
+
     ld = LaunchDescription([
 
         # Launching Rosbag node
         launch.actions.ExecuteProcess(
-            cmd=['ros2', 'bag', 'play', '-s', 'rosbag_v2', rosbag_path],
+            cmd=rosbag_command,
             output='screen'
         ),
 
         # Launching RVIZ2
         launch.actions.ExecuteProcess(
-            cmd=['ros2', 'run', 'rviz2', 'rviz2', '-d', rviz2_config_path],
+            cmd=[
+                'env',
+                '-u', 'GTK_PATH',
+                '-u', 'GTK_EXE_PREFIX',
+                '-u', 'GIO_MODULE_DIR',
+                '-u', 'GSETTINGS_SCHEMA_DIR',
+                '-u', 'LOCPATH',
+                '-u', 'GTK_IM_MODULE_FILE',
+                '-u', 'GTK_MODULES',
+                'ros2', 'run', 'rviz2', 'rviz2', '-d', rviz2_config_path,
+            ],
             output='screen'
         )
     ])
@@ -48,7 +67,7 @@ def generate_launch_description():
         parameters=[
             {"scan_topic" : "/scan"},
             {"fixed_frame" : "laser"},
-            {"scan_frequency" : 10}
+            {"scan_frequency" : 10.0}
         ]    
     )
 

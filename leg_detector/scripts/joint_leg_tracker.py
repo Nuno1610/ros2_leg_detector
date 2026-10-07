@@ -70,7 +70,9 @@ class ObjectTracked:
     Constructor
     """
 
-    def __init__(self, x, y, now, confidence, is_person, in_free_space):
+    def __init__(
+        self, x, y, now, confidence, is_person, in_free_space, scan_frequency
+    ):
         self.id_num = ObjectTracked.new_leg_id_num
         ObjectTracked.new_leg_id_num += 1
         self.colour = (random.random(), random.random(), random.random())
@@ -89,21 +91,9 @@ class ObjectTracked:
         # The important part is that the observations are "weighted" higher than the motion model
         # because they're more trustworthy and the motion model kinda sucks
 
-        # scan_frequency = KalmanMultiTrackerNode.get_parameter_or("scan_frequency", 7.5)
-        scan_frequency = 7.5
-
         delta_t = 1.0 / scan_frequency
         delta_t = 1.0 / scan_frequency
-        if scan_frequency > 7.49 and scan_frequency < 7.51:
-            std_process_noise = 0.06666
-        elif scan_frequency > 9.99 and scan_frequency < 10.01:
-            std_process_noise = 0.05
-        elif scan_frequency > 14.99 and scan_frequency < 15.01:
-            std_process_noise = 0.03333
-        else:
-            print(
-                "Scan frequency needs to be either 7.5, 10 or 15 or the standard deviation of the process noise needs to be tuned to your scanner frequency"
-            )
+        std_process_noise = 0.5 / scan_frequency
         std_pos = std_process_noise
         std_vel = std_process_noise
         std_obs = 0.1
@@ -587,6 +577,7 @@ class KalmanMultiTrackerNode(Node):
                         detect.confidence,
                         is_person=False,
                         in_free_space=detect.in_free_space,
+                        scan_frequency=self.scan_frequency,
                     )
                 )
 
@@ -662,6 +653,7 @@ class KalmanMultiTrackerNode(Node):
                                 (track_1.confidence + track_2.confidence) / 2.0,
                                 is_person=True,
                                 in_free_space=0.0,
+                                scan_frequency=self.scan_frequency,
                             )
                         )
                         track_1.deleted = True

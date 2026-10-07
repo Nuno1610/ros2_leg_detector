@@ -143,6 +143,30 @@ right now it's trained for laser scanners of 0.33 degree resolution. Different r
 ## Acknowledgement
 Some parts of <a href="http://wiki.ros.org/leg_detector">http://wiki.ros.org/leg_detector</a> are used. This version is capable of tracking people for much longer time, has less false positives with less data mismatching where a grid occupancy map is not provided a priori. This code is a port of the work of A. Leigh on <a href="https://github.com/angusleigh/leg_tracker">leg_detector</a>, for ROS2 Foxy.
 
+## Gazebo Classic simulation on ROS 2 Humble
+
+The classical pipeline can be tested without a physical laser scanner. The simulation launches a differential-drive robot, a 2D ray sensor, static obstacles, a target-shaped object, the geometric detector, the Kalman tracker, the local map and RViz.
+
+```bash
+source /opt/ros/humble/setup.bash
+source /home/nuno/ros2_ws/install/setup.bash
+ros2 launch leg_detector gazebo_classic_detector.launch.py
+```
+
+The main simulation topics are `/scan`, `/detected_leg_clusters`, `/people_tracked` and `/local_map`. The simulated laser publishes at 10 Hz and uses the `laser` frame. The robot description and world are installed from `leg_detector/description` and `leg_detector/worlds`.
+
+### TurtleBot3 House
+
+To run the classical detector on the standard TurtleBot3 House world, set the model and launch:
+
+```bash
+source /opt/ros/humble/setup.bash
+export TURTLEBOT3_MODEL=burger
+source /home/nuno/ros2_ws/install/setup.bash
+ros2 launch leg_detector turtlebot3_house_classic_detector.launch.py
+```
+
+This launch uses TurtleBot3's `/scan` topic and `base_scan` frame. It does not start Nav2; Nav2 can be launched separately after bringing up its map and localization for the House world.
 ## References
 
 A. Leigh, J. Pineau, N. Olmedo and H. Zhang, Person Tracking and Following with 2D Laser Scanners, International Conference on Robotics and Automation (ICRA), Seattle, Washington, USA, 2015. <a href="https://www.cs.mcgill.ca/~aleigh1/ICRA_2015.pdf">pdf</a>
