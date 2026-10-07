@@ -216,7 +216,7 @@ donde $f$ es el vector de 17 caracteristicas. Si $P$ supera `detection_threshold
 El detector limita el procesamiento a clusters con:
 
 $$
-\sqrt{x^2+y^2}<\text{max\_detect\_distance}.
+\sqrt{x^2+y^2}<\mathrm{max\_detect\_distance}.
 $$
 
 Las piernas se ordenan de menor a mayor distancia al laser. Se publican en el marco fijo y se representan en RViz como esferas de 13 cm.
@@ -386,7 +386,7 @@ $$
 El angulo absoluto es $\alpha+\delta$. Se convierte a indice del escaneo mediante:
 
 $$
-i=\operatorname{int}\left(\frac{(\alpha+\delta)-\text{angle\_min}}{\text{angle\_increment}}\right).
+i=\operatorname{int}\left(\frac{(\alpha+\delta)-\mathrm{angle\_min}}{\mathrm{angle\_increment}}\right).
 $$
 
 El rango nuevo solo reemplaza al existente si es menor. El resultado es otro `LaserScan` que representa a cada persona como un obstaculo circular de radio configurable, por defecto $1\,m$.
