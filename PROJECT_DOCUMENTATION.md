@@ -174,18 +174,8 @@ $$
 La linealidad usa la factorizacion SVD de la matriz centrada $P$. La circularidad ajusta el sistema:
 
 $$
-\begin{bmatrix}
--2x_1 & -2y_1 & 1\\
-\vdots & \vdots & \vdots\\
--2x_N & -2y_N & 1
-\end{bmatrix}
-\begin{bmatrix}x_c\\y_c\\c\end{bmatrix}
-=
-\begin{bmatrix}
--(x_1^2+y_1^2)\\
-\vdots\\
--(x_N^2+y_N^2)
-\end{bmatrix}.
+\forall i\in\{1,\ldots,N\}:\quad
+-2x_i\,x_c-2y_i\,y_c+c=-(x_i^2+y_i^2).
 $$
 
 El radio se obtiene con:
