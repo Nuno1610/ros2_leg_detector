@@ -106,7 +106,7 @@ $$
 Para el indice $i$, el angulo es:
 
 $$
-\theta_i = \text{angle\_min} + i\,\text{angle\_increment}.
+\theta_i = \mathrm{angle\_min} + i\,\mathrm{angle\_increment}.
 $$
 
 El punto en el marco del sensor es:
